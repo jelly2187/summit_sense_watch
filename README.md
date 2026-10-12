@@ -11,13 +11,13 @@
 - [x] 配置16 MB Flash、DIO模式、80 MHz。
 - [x] 编译、UART烧录和串口监视通过，已看到 `Hello world!`。
 - [x] 建立Git仓库。
-- [ ] 启用并验证8 MB PSRAM。
-- [ ] 替换为持续运行的心跳程序，连续验证30分钟。
+- [x] 启用Octal 80 MHz PSRAM，串口确认8 MB可分配容量。
+- [x] 替换为持续运行的心跳程序；用户反馈持续观察未发现异常。
 - [ ] 接入MAX30102，读取器件信息与红光、红外原始PPG。
 - [ ] 接入十轴IMU，实现PPG与运动数据同步记录。
 - [ ] 完成PC采集工具，再接入GNSS、温度与屏幕。
 
-当前源码仍为官方Hello World示例：输出芯片与Flash信息后倒计时重启。此时的周期性重启是示例预期行为。
+当前源码已改为持续运行的心跳程序，不再主动倒计时重启。启动输出IDF版本、芯片、复位原因、Flash容量和PSRAM可分配堆容量；随后每秒输出一条CSV记录。已烧录；用户提供的串口记录显示时间与序号递增、内存稳定，并反馈后续观察未发现异常。
 
 ## 硬件
 
@@ -60,7 +60,7 @@
 | 完整UART烧录 | `Flash (UART) Your Project` |
 | 查看输出 | `Monitor Device` |
 
-当前配置：Flash为16 MB、DIO、80 MHz；主控制台为UART0、115200 baud；PSRAM尚未启用。
+当前配置：Flash为16 MB、DIO、80 MHz；主控制台为UART0、115200 baud；PSRAM已启用：Octal模式、80 MHz、启动初始化与内存测试、允许malloc分配。
 
 需要使用命令行时，在ESP-IDF终端进入工程目录执行：
 
@@ -78,7 +78,7 @@ summit_sense_watch/
 ├── CMakeLists.txt           # 工程名称与构建入口
 ├── main/
 │   ├── CMakeLists.txt       # 主组件构建配置
-│   └── hello_world_main.c   # 当前启动示例
+│   └── hello_world_main.c   # 当前心跳程序
 ├── .vscode/                # 编辑器配置；检查其中的本机路径
 ├── .gitignore
 ├── README.md
@@ -86,15 +86,14 @@ summit_sense_watch/
 └── sdkconfig.ci            # 模板自带CI配置
 ```
 
-`sdkconfig`与`build/`由配置和构建生成，已被Git忽略。当前尚未生成 `sdkconfig.defaults`。
+`sdkconfig`与`build/`由配置和构建生成，已被Git忽略。已生成并纳入版本管理的 `sdkconfig.defaults` 保存当前板级配置，供新环境复现。
 
 ## 下一步验收
 
-1. 在配置编辑器中启用PSRAM，选择Octal模式、80 MHz和启动初始化；Flash仍使用DIO。
-2. 编译、烧录，确认启动日志识别8 MB PSRAM，无初始化失败。
-3. 将Hello World改为每秒输出序号、单调微秒时间戳和剩余内存的心跳程序。
-4. 连续运行30分钟，无异常重启，序号与时间戳持续递增。
-5. 接入MAX30102：先确认器件通信，再保存原始PPG；随后加入IMU同步采集。
+1. 断电连接MAX30102，确认3.3V供电、共地和I²C接口。
+2. 加入I²C驱动，验证7位地址0x57应答并读取器件ID；尚未实现。
+3. 配置红光与红外采样，批量读取FIFO，输出时间戳、序号及溢出状态。
+4. 建立PC原始记录，再加入IMU同步采集。
 
 采集层、缓存与传输层、算法层和显示层分开组织。初期保留原始数据、序号、设备时间戳、有效状态及丢样统计，方便PC端回放和离线分析。
 
@@ -119,3 +118,14 @@ idf.py save-defconfig
 - `亚博智能GPS模块`
 
 本工程以官方Hello World示例为起点。保留原有源码版权与许可声明，后续引入第三方驱动或算法时记录来源和许可。
+
+### 心跳输出格式
+
+```text
+type,seq,uptime_us,internal_free_bytes,internal_min_free_bytes,psram_free_bytes
+SYS,0,123456,250000,249000,0
+```
+
+`seq`从0递增，`uptime_us`为本次启动以来的微秒时间；内存字段单位为字节。重启后序号与时间会重新开始，并再次出现启动信息。PSRAM关闭时输出提示，PSRAM内存为0；启用并加入堆后应看到非零容量。内部空闲内存与PSRAM分开记录，避免总内存掩盖内部内存不足。历史最低空闲内存不会随释放内存回升，不能单凭其下降认定泄漏。
+
+此程序用于运行状态验证，不代表传感器采集或PSRAM完整读写压力测试。基础版本已完成烧录并由用户观察运行状态；后续修改仍需复查异常重启、记录间隔与内存变化。模板自带的 `pytest_hello_world.py` 不适用于修改后的输出，后续再替换为采集平台测试。
