@@ -1,0 +1,17 @@
+{
+    "idf.currentSetup": "D:\\esp\\.espressif\\v5.5.5\\esp-idf",
+    "idf.openOcdConfigs": [
+      "board/esp32s3-builtin.cfg"
+    ],
+    "idf.port": "COM6",
+    "idf.customExtraVars": {
+      "IDF_TARGET": "esp32s3"
+    },
+    "clangd.path": "C:\\Espressif\\tools\\esp-clang\\esp-19.1.2_20250312\\esp-clang\\bin\\clangd.exe",
+    "clangd.arguments": [
+      "--background-index",
+      "--query-driver=**",
+      "--compile-commands-dir=d:\\Desktop\\workspace\\10_Projects\\P261010_Watch\\firmware\\summit_sense_watch\\build"
+    ],
+    "idf.flashType": "UART"
+}
