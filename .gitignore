@@ -80,3 +80,11 @@ Desktop.ini
 # Local acquisition data
 data/raw/
 data/processed/
+
+# UI asset tooling
+node_modules/
+
+
+# Reproducible UI source fonts and tool dependencies
+tools/ui_assets/fonts/*.ttf
+tools/ui_assets/python_deps/

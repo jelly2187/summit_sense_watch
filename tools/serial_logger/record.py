@@ -12,6 +12,7 @@ import time
 from quality import summarize
 from metric import parse_metric, METRIC_FIELDS
 from imu_model import parse_imu, parse_status, summarize_imu, IMU_FIELDS
+from temperature_model import parse_temperature, summarize_temperature, TEMP_FIELDS
 
 FIELDS = ['seq', 'time_us_est', 'red', 'ir', 'flags', 'fifo_lost_min',
           'queue_lost', 'i2c_errors', 'epoch']
@@ -87,19 +88,22 @@ def run(args):
     stats = {'ppg_records': 0, 'malformed_ppg': 0, 'sequence_gaps': 0,
              'sessions': 0, 'flagged_records': 0, 'fifo_lost_min': 0,
              'queue_lost': 0, 'i2c_errors': 0, 'duration_requested_s': args.seconds,
-             'port': args.port, 'baud': args.baud, 'metric_records': 0, 'malformed_metrics': 0, 'imu_records': 0, 'malformed_imu': 0}
+             'port': args.port, 'baud': args.baud, 'metric_records': 0, 'malformed_metrics': 0, 'imu_records': 0, 'malformed_imu': 0, 'temperature_records': 0, 'malformed_temperature': 0}
     rows, previous, session = [], None, 0
     imu_rows=[]; imu_statuses=[]; imu_session=0; imu_previous=None
+    temperature_rows=[];temperature_previous=None;temperature_session=0
     last_progress = 0
     started = time.monotonic()
     try:
-        with (out/'raw.txt').open('w', encoding='utf-8') as raw, (out/'ppg.csv').open('w', newline='', encoding='utf-8') as ppg, (out/'system.csv').open('w', newline='', encoding='utf-8') as sysfile, (out/'metrics.csv').open('w', newline='', encoding='utf-8') as metricfile, (out/'imu.csv').open('w',newline='',encoding='utf-8') as imufile, (out/'imu_status.csv').open('w',newline='',encoding='utf-8') as imustatfile:
+        with (out/'raw.txt').open('w', encoding='utf-8') as raw, (out/'ppg.csv').open('w', newline='', encoding='utf-8') as ppg, (out/'system.csv').open('w', newline='', encoding='utf-8') as sysfile, (out/'metrics.csv').open('w', newline='', encoding='utf-8') as metricfile, (out/'imu.csv').open('w',newline='',encoding='utf-8') as imufile, (out/'imu_status.csv').open('w',newline='',encoding='utf-8') as imustatfile, (out/'temperature.csv').open('w',newline='',encoding='utf-8') as tempfile:
             writer = csv.DictWriter(ppg, fieldnames=['session', 'pc_receive_ns']+FIELDS)
             writer.writeheader()
             metricwriter=csv.DictWriter(metricfile,fieldnames=['session','pc_receive_ns']+METRIC_FIELDS)
             metricwriter.writeheader()
             imuwriter=csv.DictWriter(imufile,fieldnames=['session','pc_receive_ns']+IMU_FIELDS)
             imuwriter.writeheader()
+            tempwriter=csv.DictWriter(tempfile,fieldnames=['session','pc_receive_ns']+TEMP_FIELDS)
+            tempwriter.writeheader()
             status_fields=['rx_us','frames','checksum_errors','discarded_bytes','uart_errors','pressure_frames','angle_frames','online','configured']
             statwriter=csv.DictWriter(imustatfile,fieldnames=['pc_receive_ns']+status_fields)
             statwriter.writeheader()
@@ -113,7 +117,7 @@ def run(args):
                 elapsed = time.monotonic()-started
                 if not args.input and elapsed-last_progress >= 2:
                     print(f"{elapsed:.0f}s: samples={stats['ppg_records']}, gaps={stats['sequence_gaps']}, malformed={stats['malformed_ppg']}", flush=True)
-                    raw.flush(); ppg.flush(); sysfile.flush(); metricfile.flush(); imufile.flush(); imustatfile.flush()
+                    raw.flush(); ppg.flush(); sysfile.flush(); metricfile.flush(); imufile.flush(); imustatfile.flush(); tempfile.flush()
                     last_progress = elapsed
                 line = source.readline()
                 if isinstance(line, bytes): line = line.decode('utf-8', errors='replace')
@@ -165,6 +169,16 @@ def run(args):
                         status.update(pc_receive_ns=receive_ns)
                         statwriter.writerow(status);imu_statuses.append(status)
                         if view:view.add_imu_status(status)
+                elif line.startswith('TEMP,'):
+                    temperature=parse_temperature(line)
+                    if temperature:
+                        if temperature_previous is None or temperature['seq']<=temperature_previous['seq']:
+                            temperature_session+=1
+                        temperature.update(session=temperature_session,pc_receive_ns=receive_ns)
+                        tempwriter.writerow(temperature);temperature_rows.append(temperature);temperature_previous=temperature
+                        stats['temperature_records']+=1
+                        if view:view.add_temperature(temperature)
+                    else:stats['malformed_temperature']+=1
                 elif line.startswith('SYS,'):
                     parts = line.strip().split(',')
                     if len(parts) == 6:
@@ -179,6 +193,7 @@ def run(args):
         (out/'summary.json').write_text(json.dumps(stats, indent=2), encoding='utf-8')
         (out/'quality.json').write_text(json.dumps(summarize(rows), indent=2), encoding='utf-8')
         (out/'imu_quality.json').write_text(json.dumps(summarize_imu(imu_rows,imu_statuses),indent=2),encoding='utf-8')
+        (out/'temperature_quality.json').write_text(json.dumps(summarize_temperature(temperature_rows),indent=2),encoding='utf-8')
         plot_svg(out/'ppg.svg', rows)
         print(json.dumps(stats, indent=2))
         print('Open ppg.svg to view raw RED/IR waveforms.' if rows else 'No PPG records captured; inspect raw.txt.')

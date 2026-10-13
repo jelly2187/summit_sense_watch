@@ -12,10 +12,12 @@ PROJECT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(PROJECT/'tools/serial_logger'))
 from imu_model import parse_imu,parse_status
 from record import parse_ppg
+from temperature_model import parse_temperature
 
 def inspect_lines(lines):
     kinds=Counter();valid_pressure=0;pressure_samples=[];registers=[];statuses=[]
     messages=[];attempts=[];ppg=0;startup=False
+    temperature_rows=[];temperature_messages=[]
     for line in lines:
         line=line.strip()
         if line.startswith('# SummitSense'):startup=True
@@ -33,6 +35,9 @@ def inspect_lines(lines):
         status=parse_status(line)
         if status:statuses.append(status)
         if parse_ppg(line):ppg+=1
+        temperature=parse_temperature(line)
+        if temperature:temperature_rows.append(temperature)
+        if line.startswith('# AS6221:'):temperature_messages.append(line)
     last=statuses[-1] if statuses else None
     confirmed=bool(last and last['configured']) or any(int(r['v1'])==0x5e and int(r['v2'])==6 for r in registers)
     historically_pressure=bool(last and last['pressure_frames'])
@@ -59,6 +64,10 @@ def inspect_lines(lines):
             'valid_pressure_frames':valid_pressure,'pressure_seen_in_firmware_counter':historically_pressure,
             'pressure_examples':pressure_samples,'register_replies':registers,'last_status':last,
             'ppg_records':ppg,'imu_messages':messages,
+            'temperature_records':len(temperature_rows),
+            'valid_temperature_records':sum(r['valid'] for r in temperature_rows),
+            'last_temperature':temperature_rows[-1] if temperature_rows else None,
+            'temperature_messages':temperature_messages,
             'limitations':'No register reply in a short capture does not alone prove a wiring fault; replies may have occurred before capture. Use --reset with authorization to capture startup.'}
 
 def capture(args,out):
@@ -119,7 +128,7 @@ def main():
     report=inspect_lines(lines)
     report.update(port=args.port,baud=args.baud,capture_elapsed_s=elapsed,reset_requested=args.reset)
     (out/'diagnosis.json').write_text(json.dumps(report,indent=2,ensure_ascii=False),encoding='utf-8')
-    selected=[x for x in lines if x.startswith(('# IMU:','IMU,REG,','IMU,PRESS,','IMU_STAT,'))]
+    selected=[x for x in lines if x.startswith(('# IMU:','# AS6221:','TEMP,','IMU,REG,','IMU,PRESS,','IMU_STAT,'))]
     (out/'imu_filtered.txt').write_text('\n'.join(selected)+'\n',encoding='utf-8')
     print(json.dumps(report,indent=2,ensure_ascii=False))
     print(f'Diagnostic files: {out.resolve()}')

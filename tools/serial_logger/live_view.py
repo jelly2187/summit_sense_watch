@@ -4,6 +4,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 from imu_view import IMUView
+from temperature_view import TemperatureView
 
 class LiveView:
     def __init__(self):
@@ -27,6 +28,8 @@ class LiveView:
         self.notebook.add(ppg_frame,text='PPG / 生理估算')
         self.imu=IMUView(self.notebook)
         self.notebook.add(self.imu.frame,text='IMU / 三维姿态 / 气压高度')
+        self.temperature=TemperatureView(self.notebook)
+        self.notebook.add(self.temperature.frame,text='AS6221 / 温度')
         self.canvas = tk.Canvas(ppg_frame, background='white', highlightthickness=0)
         self.canvas.pack(fill='both', expand=True, padx=12)
         tk.Label(self.root, text='红光 / 红外为原始ADC值，分别自动缩放。噪声也可能被放大；生理估算由固件计算，血氧未标定。', anchor='w').pack(fill='x', padx=12, pady=8)
@@ -42,6 +45,9 @@ class LiveView:
             self.metric=None
             self.session = row['session']
         self.rows.append(row)
+
+    def add_temperature(self,row):
+        self.temperature.add(row)
 
     def add_imu(self,row):
         self.imu.add(row)
@@ -62,6 +68,7 @@ class LiveView:
             self.root.update_idletasks()
             self.draw(stats)
             self.imu.draw()
+            self.temperature.draw()
             self.root.update()
         except tk.TclError:
             self.closed=True
