@@ -1,3 +1,5 @@
-idf_component_register(SRCS "hello_world_main.c"
-                       PRIV_REQUIRES spi_flash esp_timer esp_system heap freertos esp_psram
-                       INCLUDE_DIRS "")
+idf_component_register(
+    SRCS "app_main.c"
+    INCLUDE_DIRS "."
+    PRIV_REQUIRES system_monitor max30102
+)

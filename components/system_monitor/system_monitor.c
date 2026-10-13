@@ -15,8 +15,10 @@
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "esp_timer.h"
+#include "system_monitor.h"
+#include "board_config.h"
 
-void app_main(void)
+void system_monitor_print_boot_info(void)
 {
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
@@ -42,6 +44,10 @@ void app_main(void)
     printf("# PSRAM is disabled in project configuration\n");
 #endif
 
+}
+
+void system_monitor_run_heartbeat(void)
+{
     printf("type,seq,uptime_us,internal_free_bytes,internal_min_free_bytes,psram_free_bytes\n");
     fflush(stdout);
 
@@ -60,6 +66,6 @@ void app_main(void)
         fflush(stdout);
 
         // Keep a one-second cadence without an intentional restart.
-        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(1000));
+        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(BOARD_HEARTBEAT_PERIOD_MS));
     }
 }
