@@ -11,6 +11,7 @@ import time
 
 from quality import summarize
 from metric import parse_metric, METRIC_FIELDS
+from imu_model import parse_imu, parse_status, summarize_imu, IMU_FIELDS
 
 FIELDS = ['seq', 'time_us_est', 'red', 'ir', 'flags', 'fifo_lost_min',
           'queue_lost', 'i2c_errors', 'epoch']
@@ -86,16 +87,22 @@ def run(args):
     stats = {'ppg_records': 0, 'malformed_ppg': 0, 'sequence_gaps': 0,
              'sessions': 0, 'flagged_records': 0, 'fifo_lost_min': 0,
              'queue_lost': 0, 'i2c_errors': 0, 'duration_requested_s': args.seconds,
-             'port': args.port, 'baud': args.baud, 'metric_records': 0, 'malformed_metrics': 0}
+             'port': args.port, 'baud': args.baud, 'metric_records': 0, 'malformed_metrics': 0, 'imu_records': 0, 'malformed_imu': 0}
     rows, previous, session = [], None, 0
+    imu_rows=[]; imu_statuses=[]; imu_session=0; imu_previous=None
     last_progress = 0
     started = time.monotonic()
     try:
-        with (out/'raw.txt').open('w', encoding='utf-8') as raw, (out/'ppg.csv').open('w', newline='', encoding='utf-8') as ppg, (out/'system.csv').open('w', newline='', encoding='utf-8') as sysfile, (out/'metrics.csv').open('w', newline='', encoding='utf-8') as metricfile:
+        with (out/'raw.txt').open('w', encoding='utf-8') as raw, (out/'ppg.csv').open('w', newline='', encoding='utf-8') as ppg, (out/'system.csv').open('w', newline='', encoding='utf-8') as sysfile, (out/'metrics.csv').open('w', newline='', encoding='utf-8') as metricfile, (out/'imu.csv').open('w',newline='',encoding='utf-8') as imufile, (out/'imu_status.csv').open('w',newline='',encoding='utf-8') as imustatfile:
             writer = csv.DictWriter(ppg, fieldnames=['session', 'pc_receive_ns']+FIELDS)
             writer.writeheader()
             metricwriter=csv.DictWriter(metricfile,fieldnames=['session','pc_receive_ns']+METRIC_FIELDS)
             metricwriter.writeheader()
+            imuwriter=csv.DictWriter(imufile,fieldnames=['session','pc_receive_ns']+IMU_FIELDS)
+            imuwriter.writeheader()
+            status_fields=['rx_us','frames','checksum_errors','discarded_bytes','uart_errors','pressure_frames','angle_frames','online','configured']
+            statwriter=csv.DictWriter(imustatfile,fieldnames=['pc_receive_ns']+status_fields)
+            statwriter.writeheader()
             syswriter = csv.writer(sysfile)
             syswriter.writerow(['pc_receive_ns', 'seq', 'uptime_us', 'internal_free_bytes', 'internal_min_free_bytes', 'psram_free_bytes'])
             print(f'Recording into {out.resolve()}; close VS Code Monitor first. Ctrl+C stops safely.')
@@ -106,7 +113,7 @@ def run(args):
                 elapsed = time.monotonic()-started
                 if not args.input and elapsed-last_progress >= 2:
                     print(f"{elapsed:.0f}s: samples={stats['ppg_records']}, gaps={stats['sequence_gaps']}, malformed={stats['malformed_ppg']}", flush=True)
-                    raw.flush(); ppg.flush(); sysfile.flush(); metricfile.flush()
+                    raw.flush(); ppg.flush(); sysfile.flush(); metricfile.flush(); imufile.flush(); imustatfile.flush()
                     last_progress = elapsed
                 line = source.readline()
                 if isinstance(line, bytes): line = line.decode('utf-8', errors='replace')
@@ -142,6 +149,22 @@ def run(args):
                         if view: view.add_metric(metric)
                     else:
                         stats['malformed_metrics']+=1
+                elif line.startswith('IMU,'):
+                    imu=parse_imu(line)
+                    if imu:
+                        if imu_previous is None or imu['seq']<=imu_previous['seq']:
+                            imu_session+=1
+                        imu.update(session=imu_session,pc_receive_ns=receive_ns)
+                        imuwriter.writerow(imu);imu_rows.append(imu);imu_previous=imu
+                        stats['imu_records']+=1
+                        if view:view.add_imu(imu)
+                    else:stats['malformed_imu']+=1
+                elif line.startswith('IMU_STAT,'):
+                    status=parse_status(line)
+                    if status:
+                        status.update(pc_receive_ns=receive_ns)
+                        statwriter.writerow(status);imu_statuses.append(status)
+                        if view:view.add_imu_status(status)
                 elif line.startswith('SYS,'):
                     parts = line.strip().split(',')
                     if len(parts) == 6:
@@ -155,6 +178,7 @@ def run(args):
         stats['capture_elapsed_s'] = time.monotonic()-started
         (out/'summary.json').write_text(json.dumps(stats, indent=2), encoding='utf-8')
         (out/'quality.json').write_text(json.dumps(summarize(rows), indent=2), encoding='utf-8')
+        (out/'imu_quality.json').write_text(json.dumps(summarize_imu(imu_rows,imu_statuses),indent=2),encoding='utf-8')
         plot_svg(out/'ppg.svg', rows)
         print(json.dumps(stats, indent=2))
         print('Open ppg.svg to view raw RED/IR waveforms.' if rows else 'No PPG records captured; inspect raw.txt.')

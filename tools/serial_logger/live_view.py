@@ -2,12 +2,15 @@
 from collections import deque
 import time
 import tkinter as tk
+from tkinter import ttk
+from imu_view import IMUView
 
 class LiveView:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title('SummitSense - PPG实时采集')
-        self.root.geometry('1100x620')
+        self.root.title('SummitSense - 生理与运动同步采集')
+        self.root.geometry('1280x820')
+        self.root.minsize(950,650)
         self.closed = False
         self.rows = deque(maxlen=1200)
         self.last_draw = 0
@@ -18,9 +21,15 @@ class LiveView:
         self.label.pack(fill='x', padx=12, pady=8)
         self.metric_label=tk.Label(self.root,text='心率 -- | 血氧估算 --（未标定）',anchor='w')
         self.metric_label.pack(fill='x',padx=12,pady=4)
-        self.canvas = tk.Canvas(self.root, background='white', highlightthickness=0)
+        self.notebook=ttk.Notebook(self.root)
+        self.notebook.pack(fill='both',expand=True,padx=8)
+        ppg_frame=ttk.Frame(self.notebook)
+        self.notebook.add(ppg_frame,text='PPG / 生理估算')
+        self.imu=IMUView(self.notebook)
+        self.notebook.add(self.imu.frame,text='IMU / 三维姿态 / 气压高度')
+        self.canvas = tk.Canvas(ppg_frame, background='white', highlightthickness=0)
         self.canvas.pack(fill='both', expand=True, padx=12)
-        tk.Label(self.root, text='红光 / 红外为原始ADC值，分别自动缩放。噪声也可能被放大；此窗口不计算心率或血氧。', anchor='w').pack(fill='x', padx=12, pady=8)
+        tk.Label(self.root, text='红光 / 红外为原始ADC值，分别自动缩放。噪声也可能被放大；生理估算由固件计算，血氧未标定。', anchor='w').pack(fill='x', padx=12, pady=8)
         self.root.protocol('WM_DELETE_WINDOW', self.close)
 
     def close(self):
@@ -34,6 +43,12 @@ class LiveView:
             self.session = row['session']
         self.rows.append(row)
 
+    def add_imu(self,row):
+        self.imu.add(row)
+
+    def add_imu_status(self,status):
+        self.imu.status=status
+
     def add_metric(self, metric):
         self.metric=metric
         self.metric_received=time.monotonic()
@@ -46,6 +61,7 @@ class LiveView:
         try:
             self.root.update_idletasks()
             self.draw(stats)
+            self.imu.draw()
             self.root.update()
         except tk.TclError:
             self.closed=True

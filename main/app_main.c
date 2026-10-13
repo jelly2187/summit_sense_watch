@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "max30102.h"
 #include "system_monitor.h"
+#include "yahboom_imu.h"
 
 void app_main(void)
 {
@@ -18,6 +19,11 @@ void app_main(void)
     }
     if (result != ESP_OK) {
         printf("# PPG: startup failed: %s; heartbeat continues\n", esp_err_to_name(result));
+    }
+
+    result = yahboom_imu_start();
+    if (result != ESP_OK) {
+        printf("# IMU: startup failed: %s; other tasks continue\n", esp_err_to_name(result));
     }
 
     system_monitor_run_heartbeat();

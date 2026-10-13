@@ -1,5 +1,5 @@
 idf_component_register(
     SRCS "app_main.c"
     INCLUDE_DIRS "."
-    PRIV_REQUIRES system_monitor max30102
+    PRIV_REQUIRES system_monitor max30102 yahboom_imu
 )
