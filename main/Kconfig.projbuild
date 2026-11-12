@@ -1,0 +1,8 @@
+menu "SummitSense hardware"
+    config SUMMIT_LCD35_BRINGUP
+        bool "3.5-inch ST7796S touch UI (Rev B)"
+        default n
+        help
+            Starts the ST7796S touch UI and system heartbeat without sensors.
+            Disable to restore the original 1.3-inch display and sensor app.
+endmenu

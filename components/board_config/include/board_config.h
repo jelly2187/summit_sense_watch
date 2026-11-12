@@ -8,7 +8,7 @@
 #define BOARD_HEARTBEAT_PERIOD_MS 1000
 
 #define BOARD_IMU_RX_GPIO 18  // IMU TX -> S3 RX
-#define BOARD_IMU_TX_GPIO 17  // S3 TX -> IMU RX, required to enable pressure output
+#define BOARD_IMU_TX_GPIO 17  // S3 TX reserved; IMU RX currently disconnected (USB-preconfigured output)
 #define BOARD_IMU_BAUD 9600
 
 #define BOARD_TEMPERATURE_SDA_GPIO 4
@@ -28,3 +28,15 @@
 #define BOARD_LCD_MIRROR_Y 0
 #define BOARD_LCD_X_GAP 0
 #define BOARD_LCD_Y_GAP 0
+
+ // Rev B standalone ST7796S screen; shares MOSI/SCLK/CS/DC assignment above.
+#define BOARD_LCD35_RST_GPIO 6
+#define BOARD_LCD35_BL_GPIO 7
+#define BOARD_LCD35_TEST_CLOCK_HZ 10000000
+
+#define BOARD_LCD35_TP_SDA_GPIO 8
+#define BOARD_LCD35_TP_SCL_GPIO 9
+#define BOARD_LCD35_TP_INT_GPIO 1
+#define BOARD_LCD35_TP_RST_GPIO 2
+
+#define BOARD_LC76G_RX_GPIO 16  // Rev B GNSS TX -> ESP32 UART2 RX

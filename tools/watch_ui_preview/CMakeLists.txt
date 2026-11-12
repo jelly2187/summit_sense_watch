@@ -9,6 +9,7 @@ set(LV_CONF_BUILD_DISABLE_THORVG_INTERNAL ON CACHE BOOL "" FORCE)
 add_subdirectory("${REPO}/managed_components/lvgl__lvgl" lvgl)
 add_executable(watch_ui_preview preview.c
     "${REPO}/components/watch_ui/watch_pages.c"
+    "${REPO}/components/watch_ui/watch_map.c"
     "${REPO}/components/watch_ui/fonts/watch_cn_16.c"
     "${REPO}/components/watch_ui/fonts/watch_cn_20.c")
 target_include_directories(watch_ui_preview PRIVATE "${REPO}/components/watch_ui/include")

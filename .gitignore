@@ -88,3 +88,6 @@ node_modules/
 # Reproducible UI source fonts and tool dependencies
 tools/ui_assets/fonts/*.ttf
 tools/ui_assets/python_deps/
+
+# Local GPX routes may contain private coordinates.
+/components/watch_ui/map_data/imported_route.h

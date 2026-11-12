@@ -71,7 +71,7 @@ summit_sense_watch/
 
 生成的 `sdkconfig`、`build/`与下载的 `managed_components/`不提交Git。模板中的 `hello_world_main.c`已替换为应用入口，失效的Hello World测试和示例CI配置已移除。只有已实现的模块建立代码组件；GNSS及统一快照等后续模块按相同结构加入。
 
-完整规则见 [架构说明](docs/architecture.md)，接线见 [硬件说明](docs/hardware.md)，验证记录见 [验收说明](docs/validation.md)。
+完整规则见 [架构说明](docs/architecture.md)，接线见 [全部模块接线与GPIO占用总表](docs/hardware.md)，验证记录见 [验收说明](docs/validation.md)。
 
 ## 环境与当前配置
 

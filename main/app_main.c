@@ -4,6 +4,8 @@
  */
 
 #include <stdio.h>
+#include "sdkconfig.h"
+#include "lcd35_test.h"
 #include "max30102.h"
 #include "system_monitor.h"
 #include "yahboom_imu.h"
@@ -14,6 +16,11 @@ void app_main(void)
 {
     system_monitor_print_boot_info();
 
+#ifdef CONFIG_SUMMIT_LCD35_BRINGUP
+    printf("# LCD35: Rev B touch UI; LC76G receive enabled; other sensors and SD disabled\n");
+    esp_err_t result = lcd35_test_run();
+    if (result != ESP_OK) printf("# LCD35: failed: %s\n", esp_err_to_name(result));
+#else
     // A sensor connection error must not abort system health monitoring.
     esp_err_t result = max30102_probe();
     if (result == ESP_OK) {
@@ -37,6 +44,8 @@ void app_main(void)
     if (result != ESP_OK) {
         printf("# LCD: startup failed: %s; sensor tasks continue\n", esp_err_to_name(result));
     }
+
+#endif
 
     system_monitor_run_heartbeat();
 }

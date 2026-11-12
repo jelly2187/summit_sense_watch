@@ -1,5 +1,9 @@
 # 架构与目录规则
 
+## 接线入口
+
+全部当前模块接线、GPIO占用和未启用接口以 [hardware.md](hardware.md)为入口；IMU三线接收、温度六处连接、LCD两组连接器及GNSS USB测试分别见 [imu.md](imu.md)、[temperature.md](temperature.md)、[display.md](display.md)、[gnss.md](gnss.md)。引脚变更同步board_config和对应文档，不能把历史调试接法当当前接法。
+
 ## 分层与依赖
 
 - `main`是应用编排层：调用启动检查、创建后续任务、管理应用模式，不直接实现传感器寄存器操作。
