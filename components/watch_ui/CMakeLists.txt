@@ -1,3 +1,3 @@
-idf_component_register(SRCS "watch_ui.c" "watch_ui35.c" "watch_pages.c" "watch_map.c" "fonts/watch_cn_16.c" "fonts/watch_cn_20.c"
+idf_component_register(SRCS "watch_ui.c" "watch_ui35.c" "watch_pages.c" "watch_pages35.c" "fonts/watch_title_28.c" "fonts/watch_clock_84.c" "watch_map.c" "fonts/watch_cn_16.c" "fonts/watch_cn_20.c"
     INCLUDE_DIRS "include" REQUIRES esp_common lvgl__lvgl
     PRIV_REQUIRES display_panel gnss_lc76g esp_driver_gpio esp_timer heap freertos)

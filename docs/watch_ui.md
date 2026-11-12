@@ -70,3 +70,14 @@ tools/watch_ui_preview/build/watch_ui_preview.exe tools/watch_ui_preview/build/s
 先完成实屏界面验收，然后接入触摸导航、统一数据快照与有效状态；再将心率/血氧、温度、姿态和气压替换为真实值。GNSS、步数、校时、续航/电量和存储功能按各自硬件与验证条件逐步接入。
 
 固件构建验证：ESP-IDF v5.5.5、ESP32-S3目标通过；应用镜像703,280字节（约687KiB），1MiB应用分区剩余33%。已有15项温度/IMU/生理测试全部通过。尚未烧录本轮七页UI进行实屏验收。
+
+## Rev B：3.5 寸深色界面（2026-11-12）
+
+改版前版本已归档到 origin/main，提交 1abb0ff。320×480 界面参考 [Apple 的 watchOS 设计指南](https://developer.apple.com/design/human-interface-guidelines/designing-for-watchos) 的简洁信息层次和易点按布局，使用 SummitSense 自己的界面、Noto Sans SC 字库和数据样例。
+
+- 表盘大字时钟与心率/温度快捷卡；分别点卡片可进入健康或环境页。
+- 健康页保留心率、示例波形、未标定血氧和 SQI；运动页使用三色示意环，保留三个姿态角。
+- 设置页可点按轮播卡片；保留 BOOT 短按翻页、长按轮播，以及左右滑动和底部翻页按钮。
+- 定位页保持地图拖动、缩放、FIT、GNSS 状态和 GPX 路线逻辑。图内拖动不会触发翻页。
+- 旧 240×240 界面保留。新字体字库可使用 tools/ui_assets/generate_rev_b_fonts.py 重建；保留现有 Noto Sans SC OFL 许可。
+- 软件预览与固件构建完成；新版触摸快捷入口与显示效果待实机烧录验证。

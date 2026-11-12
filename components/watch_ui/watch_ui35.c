@@ -61,7 +61,7 @@ esp_err_t watch_ui35_run(const watch_ui35_port_t *port)
     printf("# UI35: 320x480 demo; tap footer arrows or swipe; BOOT short=next, hold=autoplay\n");
     while (render.error == ESP_OK) {
         uint32_t now = tick_ms();
-        int direction = 0;
+        int direction = 0, jump = -1;
         bool redraw = false, pressed = false;
         int x = 0, y = 0;
         if (!port->touch(port->context, &pressed, &x, &y)) {
@@ -81,6 +81,16 @@ esp_err_t watch_ui35_run(const watch_ui35_port_t *port)
                          last_y < WATCH35_NAV_BOTTOM) {
                     if (start_x < 100 && last_x < 100) direction = -1;
                     if (start_x >= 220 && last_x >= 220) direction = 1;
+                } else if (abs(dx) < 25 && abs(dy) < 25 && start_x >= 16 && start_x < 304 &&
+                           last_x >= 16 && last_x < 304) {
+                    if (page == 0 && start_y >= 238 && start_y < 338 && last_y >= 238 && last_y < 338) {
+                        if (start_x < 154 && last_x < 154) jump = 1;
+                        else if (start_x >= 166 && last_x >= 166) jump = 3;
+                    } else if (page == 6 && start_y >= 82 && start_y < 171 && last_y >= 82 && last_y < 171) {
+                        autoplay = !autoplay;
+                        redraw = true;
+                        last_page = now;
+                    }
                 }
             }
             touch_down = touch_blocked = false;
@@ -96,8 +106,8 @@ esp_err_t watch_ui35_run(const watch_ui35_port_t *port)
             boot_long = true; autoplay = !autoplay; redraw = true; last_page = now;
         }
         if (!direction && autoplay && page != 4 && !touch_down && !boot_down && now - last_page >= 8000) direction = 1;
-        if (direction) {
-            page = (page + WATCH_PAGE_COUNT + (direction > 0 ? 1 : WATCH_PAGE_COUNT - 1)) % WATCH_PAGE_COUNT;
+        if (direction || jump >= 0) {
+            page = jump >= 0 ? (unsigned)jump : (page + (direction > 0 ? 1 : WATCH_PAGE_COUNT - 1)) % WATCH_PAGE_COUNT;
             last_page = now;
             redraw = true;
             printf("# UI35: page=%u %s\n", page, watch_pages_name(page));

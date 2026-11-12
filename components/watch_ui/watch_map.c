@@ -94,7 +94,7 @@ static void paint(lv_event_t *ev)
     lv_layer_t *layer=lv_event_get_layer(ev);
     for (int i=32;i<MAP_W;i+=32) line(layer,&area,i,0,i,MAP_H-1,0x203840,1);
     for (int i=32;i<MAP_H;i+=32) line(layer,&area,0,i,MAP_W-1,i,0x203840,1);
-    const unsigned colors[]={0x335D49,0x819694,0x2582AE,0x49E3BE};
+    const unsigned colors[]={0x335D49,0x819694,0x2582AE,0x53D9FF};
     const int widths[]={2,2,4,4};
     for (unsigned k=0;k<sizeof(paths)/sizeof(*paths);++k) {
         const path_t *p=&paths[k];
@@ -113,7 +113,7 @@ static void paint(lv_event_t *ev)
     if (have_marker) {
         dot(layer,&area,marker_x,marker_y,10,0x123B62);
         dot(layer,&area,marker_x,marker_y,6,0xDBF4FF);
-        dot(layer,&area,marker_x,marker_y,4,0x408DFF);
+        dot(layer,&area,marker_x,marker_y,4,0x4B8DFF);
     }
 }
 
@@ -136,7 +136,7 @@ static void button(lv_obj_t *root,int y,const char *text)
     lv_obj_set_pos(b,MAP_X+MAP_W-43,y);lv_obj_set_size(b,35,34);
     lv_obj_set_style_radius(b,7,0);
     lv_obj_set_style_bg_opa(b,LV_OPA_COVER,0);
-    lv_obj_set_style_bg_color(b,lv_color_hex(0x233F46),0);
+    lv_obj_set_style_bg_color(b,lv_color_hex(0x303032),0);
     lv_obj_t *l=label(b,0,8,35,text,0xE4F3F2);
     lv_obj_set_style_text_align(l,LV_TEXT_ALIGN_CENTER,0);
 }
@@ -192,7 +192,7 @@ void watch_map_show(lv_obj_t *root,bool animate_demo)
     lv_obj_remove_style_all(view);lv_obj_remove_flag(view,LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_pos(view,MAP_X,MAP_Y);lv_obj_set_size(view,MAP_W,MAP_H);
     lv_obj_set_style_bg_opa(view,LV_OPA_COVER,0);
-    lv_obj_set_style_bg_color(view,lv_color_hex(0x14292B),0);
+    lv_obj_set_style_bg_color(view,lv_color_hex(0x171D1E),0);
     lv_obj_set_style_clip_corner(view,true,0);
     lv_obj_add_event_cb(view,paint,LV_EVENT_DRAW_MAIN,NULL);
     label(root,MAP_X+8,MAP_Y+8,128,MAP_GEOREF ? "OFFLINE TRACK" : "DEMO MAP",0xC6E6DD);
